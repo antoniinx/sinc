@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-none font-medium transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white;
+  }
+  
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
+  }
+  .btn-outline {
+    @apply bg-white border border-gray-300 text-gray-900 hover:bg-gray-100;
+  }
+  .btn-outline-inverse {
+    @apply bg-transparent border border-white text-white hover:bg-white/10;
+  }
+  
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700;
+  }
+  .btn-amber {
+    @apply bg-yellow-500 text-white hover:bg-yellow-600;
+  }
+  
+  .btn-sm {
+    @apply px-3 py-1 text-sm rounded-none;
+  }
+  
+  .input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  }
+  
+  .card {
+    @apply bg-white rounded-none shadow-none border border-gray-200 p-6;
+  }
+
+  /* Navbar buttons */
+  .btn-ghost {
+    @apply bg-white border border-gray-200 text-gray-800 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white;
+  }
+  .btn-nav {
+    @apply h-9 px-3 text-sm rounded-none;
+  }
+  .btn-icon {
+    @apply h-9 w-9 flex items-center justify-center bg-white border border-gray-200 text-gray-800 hover:bg-gray-100 rounded-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white;
+  }
+  .segmented {
+    @apply flex border border-gray-200;
+  }
+  .segmented > button {
+    @apply px-3 h-9 text-sm font-semibold text-gray-800 hover:text-gray-900 hover:bg-gray-100 rounded-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white;
+  }
+  .segmented > button.active {
+    @apply bg-gray-900 text-white;
+  }
+  .segmented > button + button {
+    @apply border-l border-gray-200;
+  }
+
+  /* Custom checkbox with always-white tick */
+  .custom-checkbox {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #ffffff;
+    border: 1px solid #9ca3af; /* gray-400 */
+    display: inline-grid;
+    place-content: center;
+    border-radius: 0;
+    transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .custom-checkbox:checked {
+    background-color: var(--cbg, #3B82F6);
+    border-color: var(--cbg, #3B82F6);
+  }
+  .custom-checkbox:checked::after {
+    content: '';
+    width: 6px;
+    height: 10px;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    transform: rotate(45deg);
+    margin-top: -1px;
+  }
+  .custom-checkbox:focus-visible { box-shadow: 0 0 0 2px rgba(59,130,246,.6); }
+
+  /* List row (groups/friends) */
+  .list-row {
+    @apply border border-gray-200 bg-white transition-colors duration-150;
+  }
+  .list-row:hover { @apply border-gray-300; }
+}
+
+/* ============================= */
+/* Glassmorphism Theme Additions */
+/* ============================= */
+
+html, body, #root { height: 100%; }
+body { background: #f8fafc; }
+
+/* Reusable glass cards */
+.glass-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 0; box-shadow: none; }
+
+.glass-header { background: #ffffff; border-bottom: 1px solid #e5e7eb; }
+
+.glass-button { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 0; }
+.glass-button:hover { background: #f3f4f6; }
+.glass-button:active { background: #e5e7eb; }
+
+/* Glass overlay for modals */
+.glass-overlay { background: rgba(0,0,0,0.45); }
+
+/* ============================= */
+/* Enhanced Calendar Glass Styles */
+/* ============================= */
+
+
+.enhanced-calendar .rbc-toolbar { background: #ffffff; border-bottom: 1px solid #e5e7eb; }
+.enhanced-calendar.hide-toolbar .rbc-toolbar { display: none !important; }
+
+.enhanced-calendar .rbc-toolbar button { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 0; }
+
+.enhanced-calendar .rbc-toolbar button.rbc-active { background: #2563eb; border-color: #1d4ed8; color: #ffffff; }
+
+.enhanced-calendar .rbc-month-view,
+.enhanced-calendar .rbc-time-view { border: none !important; border-radius: 0 !important; background: #ffffff; margin-top: 0 !important; }
+
+/* Square event chips */
+.enhanced-calendar .rbc-event {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+/* Selected range/event hover subtle */
+.enhanced-calendar .rbc-selected-cell { background: rgba(37, 99, 235, 0.08) !important; }
+.enhanced-calendar .rbc-event.rbc-selected { opacity: 0.9; }
+
+/* Keep airy look for off-range */
+/* default off-range retained */
+
+/* Full-bleed spacing adjustments */
+/* remove forced padding tweaks for minimal look */
+
+/* Full-bleed calendar container (no radius, no border, edge-to-edge) */
+.calendar-full-bleed {
+  border: none !important;
+  border-radius: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Remove side gutters/rounded strips inside views */
+.enhanced-calendar .rbc-time-view .rbc-time-content,
+.enhanced-calendar .rbc-time-view .rbc-time-header,
+.enhanced-calendar .rbc-month-view .rbc-row-bg,
+.enhanced-calendar .rbc-month-view .rbc-day-bg,
+.enhanced-calendar .rbc-time-view,
+.enhanced-calendar .rbc-month-view {
+  border-radius: 0 !important;
+}
