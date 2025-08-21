@@ -1,18 +1,32 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-// Create database file in the project directory
-const dbPath = path.join(__dirname, '..', 'database', 'shared_calendar.db');
+// Use Supabase in production, SQLite in development
+const isProduction = process.env.NODE_ENV === 'production';
 
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Error opening database:', err.message);
-  } else {
-    console.log('Connected to SQLite database');
-    // Initialize tables if they don't exist
-    initDatabase();
-  }
-});
+let db;
+let initFunction;
+
+if (isProduction) {
+  // Use Supabase in production
+  const supabase = require('./supabase');
+  db = supabase.pool;
+  initFunction = supabase.initSupabaseDatabase;
+  console.log('Using Supabase PostgreSQL database');
+} else {
+  // Use SQLite in development
+  const dbPath = path.join(__dirname, '..', 'database', 'shared_calendar.db');
+  db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+      console.error('Error opening database:', err.message);
+    } else {
+      console.log('Connected to SQLite database');
+      // Initialize tables if they don't exist
+      initDatabase();
+    }
+  });
+  initFunction = initDatabase;
+}
 
 function initDatabase() {
   const createTables = `
@@ -158,49 +172,62 @@ function runMigrations() {
 
 // Helper function to run queries with promises
 function query(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve({ rows });
-      }
+  if (isProduction) {
+    return supabase.query(sql, params);
+  } else {
+    return new Promise((resolve, reject) => {
+      db.all(sql, params, (err, rows) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({ rows });
+        }
+      });
     });
-  });
+  }
 }
 
 // Helper function to run single row queries
 function queryOne(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve({ rows: row ? [row] : [] });
-      }
+  if (isProduction) {
+    return supabase.queryOne(sql, params);
+  } else {
+    return new Promise((resolve, reject) => {
+      db.get(sql, params, (err, row) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({ rows: row ? [row] : [] });
+        }
+      });
     });
-  });
+  }
 }
 
 // Helper function to run insert/update/delete queries
 function run(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function(err) {
-      if (err) {
-        reject(err);
-      } else {
-        resolve({ 
-          rows: [{ id: this.lastID }],
-          rowCount: this.changes 
-        });
-      }
+  if (isProduction) {
+    return supabase.run(sql, params);
+  } else {
+    return new Promise((resolve, reject) => {
+      db.run(sql, params, function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({ 
+            rows: [{ id: this.lastID }],
+            rowCount: this.changes 
+          });
+        }
+      });
     });
-  });
+  }
 }
 
 module.exports = {
   query,
   queryOne,
   run,
-  db
+  db,
+  initFunction
 };

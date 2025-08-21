@@ -15,10 +15,20 @@ const path = require('path');
 
 const app = express();
 
+// Initialize database in production
+if (process.env.NODE_ENV === 'production') {
+  const { initFunction } = require('./config/database');
+  initFunction().then(() => {
+    console.log('Database initialized for production');
+  }).catch(err => {
+    console.error('Failed to initialize database:', err);
+  });
+}
+
 // Middleware
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-frontend-domain.vercel.app'] 
+    ? ['https://sinc.vercel.app', 'https://sinc-git-main-antoniinx.vercel.app'] 
     : ['http://localhost:3000'],
   credentials: true
 }));
