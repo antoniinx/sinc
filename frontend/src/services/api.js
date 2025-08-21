@@ -2,7 +2,7 @@ import axios from 'axios'
 
 export const api = axios.create({
   baseURL: process.env.NODE_ENV === 'production' 
-    ? '/api'
+    ? 'https://sinc-backend.vercel.app'
     : 'http://localhost:5000/api',
   withCredentials: true,
   headers: {
