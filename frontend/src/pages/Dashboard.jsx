@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Calendar, CalendarDays, Users, Plus, LogOut, User, Settings, ChevronDown, UserPlus, Search, X, Check, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Calendar, CalendarDays, Users, Plus, LogOut, User, Settings, ChevronDown, UserPlus, Search, X, Check, Clock, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
 import { addMonths, addWeeks, addDays } from 'date-fns'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../services/api'
@@ -13,6 +13,8 @@ import GroupActionModal from '../components/GroupActionModal'
 import EnhancedCreateEventModal from '../components/EnhancedCreateEventModal'
 import EditGroupModal from '../components/EditGroupModal'
 import ProfileSettingsModal from '../components/ProfileSettingsModal'
+import AIChatModal from '../components/AIChatModal'
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 
 export default function Dashboard() {
   const { user, logout, setUser } = useAuth()
@@ -40,6 +42,7 @@ export default function Dashboard() {
   const [calendarView, setCalendarView] = useState('month')
   const [calendarDate, setCalendarDate] = useState(new Date())
   const [openFriendProfile, setOpenFriendProfile] = useState(null)
+  const [showAIChat, setShowAIChat] = useState(false)
 
   const handlePrev = () => {
     setCalendarDate(prev => {
@@ -60,6 +63,11 @@ export default function Dashboard() {
   useEffect(() => {
     fetchData()
   }, [])
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onCtrlK: () => setShowAIChat(true)
+  })
 
   const fetchData = async () => {
     try {
@@ -109,7 +117,43 @@ export default function Dashboard() {
     setEvents((prev) => [newEvent, ...prev])
     setShowCreateEvent(false)
     setSelectedSlot(null)
+    setShowAIChat(false)
     toast.success('Událost vytvořena!')
+  }
+
+  const handleAIEventCreated = async (eventData) => {
+    // Handle event created by AI
+    console.log('AI created event:', eventData)
+    
+    try {
+      // Create the event using the existing API
+      const eventPayload = {
+        title: eventData.title,
+        date: eventData.date,
+        time: eventData.time,
+        endTime: eventData.endTime,
+        description: eventData.description || '',
+        groupId: null // Let user choose group later
+      }
+      
+      console.log('Frontend sending payload:', eventPayload);
+      
+      console.log('Creating event with payload:', eventPayload)
+      
+      const response = await api.post('/events', eventPayload)
+      const newEvent = response.data
+      
+      console.log('Event created successfully:', newEvent)
+      
+      // Add to events list
+      setEvents(prev => [...prev, newEvent])
+      
+      toast.success('Událost vytvořena!')
+    } catch (error) {
+      console.error('Error creating AI event:', error)
+      console.error('Error response:', error.response?.data)
+      toast.error(`Chyba při vytváření události: ${error.response?.data?.error || error.message}`)
+    }
   }
 
   const handleEventDeleted = (deletedEventId) => {
@@ -289,6 +333,16 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              {/* AI Assistant Button */}
+              <button
+                onClick={() => setShowAIChat(true)}
+                className="btn btn-ghost btn-nav flex items-center"
+                title="AI Asistent (Ctrl+K)"
+              >
+                <Sparkles className="h-4 w-4 mr-1" />
+                AI
+              </button>
+              
               {/* User Dropdown */}
               <div className="relative">
                 <button
@@ -659,6 +713,12 @@ export default function Dashboard() {
         />
       )}
 
+      {showAIChat && (
+        <AIChatModal
+          onClose={() => setShowAIChat(false)}
+          onEventCreated={handleAIEventCreated}
+        />
+      )}
       
     </div>
   )

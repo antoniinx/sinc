@@ -130,32 +130,51 @@ router.get('/:eventId', auth, async (req, res) => {
 // Create new event
 router.post('/', [
   auth,
-  body('groupId').isInt().withMessage('Valid group ID is required'),
+  body('groupId').optional(),
   body('title').notEmpty().withMessage('Event title is required'),
-  body('date').isDate().withMessage('Valid date is required')
+  body('date').notEmpty().withMessage('Valid date is required')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
     const { groupId, title, description, date, time, endDate, endTime, location, imageUrl } = req.body;
+    
+    console.log('Received event data:', { groupId, title, description, date, time, endDate, endTime, location, imageUrl })
+
+    // If no groupId provided, use the first group the user is member of
+    let finalGroupId = groupId;
+    if (!finalGroupId) {
+      const userGroupsResult = await queryOne(`
+        SELECT group_id FROM group_members WHERE user_id = ? LIMIT 1
+      `, [req.user.id]);
+      
+      if (userGroupsResult.rows.length === 0) {
+        return res.status(400).json({ error: 'User must be member of at least one group to create events' });
+      }
+      
+      finalGroupId = userGroupsResult.rows[0].group_id;
+      console.log('Using default group ID:', finalGroupId);
+    }
 
     // Check if user is member of the group
     const memberCheck = await queryOne(`
       SELECT * FROM group_members WHERE group_id = ? AND user_id = ?
-    `, [groupId, req.user.id]);
+    `, [finalGroupId, req.user.id]);
 
     if (memberCheck.rows.length === 0) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
     // Create event
+    console.log('Inserting event with values:', [finalGroupId, req.user.id, title, description, date, time, endDate, endTime, location, imageUrl])
     const result = await run(`
       INSERT INTO events (group_id, creator_id, title, description, date, time, end_date, end_time, location, image_url)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [groupId, req.user.id, title, description, date, time, endDate, endTime, location, imageUrl]);
+    `, [finalGroupId, req.user.id, title, description, date, time, endDate, endTime, location, imageUrl]);
 
     const eventId = result.rows[0].id;
 
@@ -165,6 +184,7 @@ router.post('/', [
     `, [eventId]);
 
     const event = eventResult.rows[0];
+    console.log('Created event from database:', event)
 
     // Add creator as attendee with 'yes' status
     await run(`

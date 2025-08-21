@@ -78,13 +78,20 @@ export default function EnhancedCreateEventModal({ onClose, onCreated, groups, s
       const eventData = {
         ...data,
         endDate: isMultiDay ? data.endDate : null,
-        endTime: isMultiDay ? data.endTime : null
+        endTime: data.endTime || null  // Always send endTime if it exists, regardless of isMultiDay
       }
       
+      console.log('Sending event data:', eventData)
+      console.log('isMultiDay:', isMultiDay)
+      console.log('data.endTime:', data.endTime)
+      console.log('eventData.endTime:', eventData.endTime)
+      
       const response = await api.post('/events', eventData)
+      console.log('Response from server:', response.data)
       onCreated(response.data)
       toast.success('Událost byla úspěšně vytvořena')
     } catch (error) {
+      console.error('Error creating event:', error)
       toast.error(error.response?.data?.error || 'Chyba při vytváření události')
     } finally {
       setLoading(false)

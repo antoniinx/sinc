@@ -24,6 +24,7 @@ function EnhancedCalendar({ events, onEventClick, groups = [], onSelectSlot, onS
 
   const calendarEvents = useMemo(() => {
     return events.map(event => {
+      console.log('Processing event:', event)
       const startDate = new Date(`${event.date}${event.time ? `T${event.time}` : ''}`)
       let endDate = startDate
 
@@ -35,14 +36,22 @@ function EnhancedCalendar({ events, onEventClick, groups = [], onSelectSlot, onS
           endDate = endOfDay(endDate)
         }
       } else if (event.time) {
-        // Single day event with time - add 1 hour if no end time
-        endDate = new Date(startDate.getTime() + 60 * 60 * 1000)
+        // Single day event with time
+        if (event.end_time) {
+          // Use the actual end time from the database
+          endDate = new Date(`${event.date}T${event.end_time}`)
+          console.log('Using end_time from database:', event.end_time, 'endDate:', endDate)
+        } else {
+          // If no end time specified, add 1 hour as default
+          endDate = new Date(startDate.getTime() + 60 * 60 * 1000)
+          console.log('No end_time found, using default 1 hour')
+        }
       } else {
         // All-day event - set to end of day
         endDate = endOfDay(startDate)
       }
 
-      return {
+      const calendarEvent = {
         id: event.id,
         title: event.title,
         start: startDate,
@@ -50,6 +59,9 @@ function EnhancedCalendar({ events, onEventClick, groups = [], onSelectSlot, onS
         resource: event,
         allDay: !event.time && !event.end_time
       }
+      
+      console.log('Created calendar event:', calendarEvent)
+      return calendarEvent
     })
   }, [events])
 

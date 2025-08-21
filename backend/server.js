@@ -10,6 +10,7 @@ const eventsRoutes = require('./routes/events');
 const commentsRoutes = require('./routes/comments');
 const usersRoutes = require('./routes/users');
 const friendsRoutes = require('./routes/friends');
+const aiRoutes = require('./routes/ai');
 const path = require('path');
 
 const app = express();
@@ -33,6 +34,7 @@ app.use('/api/events', eventsRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/friends', friendsRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
