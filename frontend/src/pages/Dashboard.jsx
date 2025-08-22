@@ -359,7 +359,10 @@ export default function Dashboard() {
               
               {/* Invitations Button */}
               <button
-                onClick={() => setShowInvitations(true)}
+                onClick={() => {
+                  console.log('Invitations button clicked');
+                  setShowInvitations(true);
+                }}
                 className="btn btn-ghost btn-nav flex items-center relative"
                 title="Pozvánky"
               >
@@ -751,6 +754,7 @@ export default function Dashboard() {
 
       {showInvitations && (
         <InvitationsModal
+          isOpen={showInvitations}
           onClose={() => setShowInvitations(false)}
           onResponded={() => {
             fetchData()

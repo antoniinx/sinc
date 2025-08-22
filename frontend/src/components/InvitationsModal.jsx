@@ -12,18 +12,22 @@ const InvitationsModal = ({ isOpen, onClose, onResponded }) => {
   const [suggestedTime, setSuggestedTime] = useState('');
 
   useEffect(() => {
+    console.log('InvitationsModal useEffect - isOpen:', isOpen);
     if (isOpen) {
       loadInvitations();
     }
   }, [isOpen]);
 
   const loadInvitations = async () => {
+    console.log('Loading invitations...');
     setLoading(true);
     try {
       const response = await api.get('/events/invitations/pending');
+      console.log('Invitations response:', response.data);
       setInvitations(response.data);
     } catch (error) {
       console.error('Error loading invitations:', error);
+      console.error('Error response:', error.response?.data);
       toast.error('Chyba při načítání pozvánek');
     } finally {
       setLoading(false);
