@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, Send, Sparkles, Clock, Calendar, Users, MapPin } from 'lucide-react'
+import { X, Send, Sparkles, Clock, Calendar, Users, MapPin, CheckCircle, AlertCircle } from 'lucide-react'
 import { api } from '../services/api'
 import toast from 'react-hot-toast'
 
@@ -45,7 +45,8 @@ export default function AIChatModal({ onClose, onEventCreated }) {
         id: Date.now() + 1,
         type: 'ai',
         content: response.message,
-        eventData: response.eventData
+        eventData: response.eventData,
+        responseType: response.type
       }
 
       setMessages(prev => [...prev, aiMessage])
@@ -95,6 +96,56 @@ export default function AIChatModal({ onClose, onEventCreated }) {
     }
   }
 
+  // Simple markdown-like formatting
+  const formatMessage = (content) => {
+    if (!content) return '';
+    
+    // Replace **text** with bold
+    let formatted = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Replace • with bullet points
+    formatted = formatted.replace(/•/g, '• ');
+    
+    // Replace \n with <br>
+    formatted = formatted.replace(/\n/g, '<br>');
+    
+    return formatted;
+  }
+
+  const getMessageIcon = (responseType) => {
+    switch (responseType) {
+      case 'greeting':
+        return <Sparkles className="h-4 w-4 text-blue-600" />;
+      case 'calendar_analysis':
+        return <Calendar className="h-4 w-4 text-green-600" />;
+      case 'meeting_suggestion':
+        return <Users className="h-4 w-4 text-purple-600" />;
+      case 'event_creation':
+        return <Clock className="h-4 w-4 text-orange-600" />;
+      case 'help':
+        return <AlertCircle className="h-4 w-4 text-blue-600" />;
+      default:
+        return <Sparkles className="h-4 w-4 text-gray-600" />;
+    }
+  }
+
+  const getMessageStyle = (responseType) => {
+    switch (responseType) {
+      case 'greeting':
+        return 'bg-blue-50 border-blue-200 text-blue-900';
+      case 'calendar_analysis':
+        return 'bg-green-50 border-green-200 text-green-900';
+      case 'meeting_suggestion':
+        return 'bg-purple-50 border-purple-200 text-purple-900';
+      case 'event_creation':
+        return 'bg-orange-50 border-orange-200 text-orange-900';
+      case 'help':
+        return 'bg-blue-50 border-blue-200 text-blue-900';
+      default:
+        return 'bg-white border-gray-300 text-gray-900';
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" onClick={onClose}>
       <div className="fixed inset-0 bg-black/50"></div>
@@ -130,18 +181,38 @@ export default function AIChatModal({ onClose, onEventCreated }) {
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] px-4 py-3 border-2 ${
+                className={`max-w-[85%] px-4 py-3 border-2 ${
                   message.type === 'user'
                     ? 'bg-red-600 text-white border-red-700 shadow-sm'
                     : message.isError
                     ? 'bg-red-50 text-red-800 border-red-300'
-                    : 'bg-white text-gray-900 border-gray-300 shadow-sm'
+                    : getMessageStyle(message.responseType)
                 }`}
               >
-                <p className="text-sm leading-relaxed font-medium">{message.content}</p>
+                {message.type === 'ai' && !message.isError && (
+                  <div className="flex items-center mb-2">
+                    {getMessageIcon(message.responseType)}
+                    <span className="ml-2 text-xs font-bold uppercase tracking-wide opacity-75">
+                      {message.responseType === 'greeting' && 'Pozdrav'}
+                      {message.responseType === 'calendar_analysis' && 'Analýza kalendáře'}
+                      {message.responseType === 'meeting_suggestion' && 'Návrh termínů'}
+                      {message.responseType === 'event_creation' && 'Vytvoření události'}
+                      {message.responseType === 'help' && 'Nápověda'}
+                    </span>
+                  </div>
+                )}
+                
+                <div 
+                  className="text-sm leading-relaxed font-medium"
+                  dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }}
+                />
+                
                 {message.eventData && (
-                  <div className="mt-3 p-3 bg-gray-50 border-2 border-gray-200">
-                    <h4 className="font-bold text-sm mb-2 text-gray-900">Návrh události:</h4>
+                  <div className="mt-3 p-3 bg-white border-2 border-gray-200">
+                    <h4 className="font-bold text-sm mb-2 text-gray-900 flex items-center">
+                      <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                      Návrh události:
+                    </h4>
                     <div className="space-y-1 text-xs mb-3">
                       <div className="flex items-center">
                         <Calendar className="h-3 w-3 mr-2 text-red-600" />
@@ -188,7 +259,7 @@ export default function AIChatModal({ onClose, onEventCreated }) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Napiš, jakou událost chceš vytvořit..."
+              placeholder="Napiš, s čím ti mohu pomoci..."
               className="flex-1 px-4 py-3 border-2 border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors bg-white text-gray-900 placeholder-gray-500 font-medium"
               disabled={loading}
             />
