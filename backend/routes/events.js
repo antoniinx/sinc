@@ -511,7 +511,12 @@ router.put('/:eventId/respond', [
     }
     return true;
   }).withMessage('Suggested date must be valid ISO date'),
-  body('suggestedTime').optional().isString().withMessage('Suggested time must be a string')
+  body('suggestedTime').optional().custom((value) => {
+    if (value !== null && value !== undefined) {
+      return typeof value === 'string';
+    }
+    return true;
+  }).withMessage('Suggested time must be a string')
 ], async (req, res) => {
   try {
     console.log('Respond request:', { 
