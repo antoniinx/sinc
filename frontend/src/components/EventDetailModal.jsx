@@ -236,7 +236,7 @@ export default function EventDetailModal({ eventId, onClose, onDeleted }) {
                           <div className="font-bold truncate text-sm">{attendee.name}</div>
                           <div className="text-xs text-gray-500 truncate font-medium">{attendee.email}</div>
                         </div>
-                        <span className={`inline-flex items-center px-3 py-2 text-xs font-bold border-2 ${getStatusColor(attendee.status)}`}>
+                        <span className={`inline-flex items-center px-3 py-2 text-xs font-bold border-2 w-32 justify-center ${getStatusColor(attendee.status)}`}>
                           {getStatusIcon(attendee.status)}
                           <span className="ml-2">
                             {attendee.status === 'yes' ? 'Účastní se' : 
@@ -355,13 +355,13 @@ export default function EventDetailModal({ eventId, onClose, onDeleted }) {
                     placeholder="Napsat, co je potřeba zařídit..." 
                     className="flex-1 px-4 py-3 border-2 border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors font-medium" 
                   />
-                  <button 
-                    onClick={handleAddTask} 
-                    disabled={taskLoading} 
-                    className="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-green-700 font-bold text-white transition-colors"
-                  >
-                    {taskLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : '+'}
-                  </button>
+                                      <button 
+                      onClick={handleAddTask} 
+                      disabled={taskLoading} 
+                      className="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-green-700 font-bold text-white transition-colors text-xl"
+                    >
+                      {taskLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : '+'}
+                    </button>
                 </div>
                 <div className="space-y-3">
                   {tasks.map((task) => (
