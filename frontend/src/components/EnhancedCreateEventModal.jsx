@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
-import { X, Calendar, Clock, MapPin, Image, Users, Plus } from 'lucide-react'
+import { X, Calendar, Clock, MapPin, Image, Users, Plus, UserPlus } from 'lucide-react'
 import { format, addDays, isAfter, isBefore, startOfDay } from 'date-fns'
 import { cs } from 'date-fns/locale'
 import { api } from '../services/api'
 import toast from 'react-hot-toast'
+import InviteParticipantsModal from './InviteParticipantsModal'
 
 export default function EnhancedCreateEventModal({ onClose, onCreated, groups, selectedSlot = null }) {
   const [loading, setLoading] = useState(false)
@@ -13,6 +14,8 @@ export default function EnhancedCreateEventModal({ onClose, onCreated, groups, s
   const [showEndDatePicker, setShowEndDatePicker] = useState(false)
   const [showTimePicker, setShowTimePicker] = useState(false)
   const [showEndTimePicker, setShowEndTimePicker] = useState(false)
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [invitedUsers, setInvitedUsers] = useState([])
   
   const datePickerRef = useRef(null)
   const endDatePickerRef = useRef(null)
@@ -88,14 +91,33 @@ export default function EnhancedCreateEventModal({ onClose, onCreated, groups, s
       
       const response = await api.post('/events', eventData)
       console.log('Response from server:', response.data)
+      
+      // If there are invited users, invite them to the event
+      if (invitedUsers.length > 0) {
+        try {
+          await api.post(`/events/${response.data.id}/invite`, {
+            userIds: invitedUsers
+          })
+          toast.success(`Událost byla úspěšně vytvořena a ${invitedUsers.length} pozvánek bylo odesláno`)
+        } catch (inviteError) {
+          console.error('Error inviting users:', inviteError)
+          toast.success('Událost byla vytvořena, ale chyba při odesílání pozvánek')
+        }
+      } else {
+        toast.success('Událost byla úspěšně vytvořena')
+      }
+      
       onCreated(response.data)
-      toast.success('Událost byla úspěšně vytvořena')
     } catch (error) {
       console.error('Error creating event:', error)
       toast.error(error.response?.data?.error || 'Chyba při vytváření události')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleInviteParticipants = (userIds) => {
+    setInvitedUsers(userIds)
   }
 
   const handleDateSelect = (date) => {
@@ -421,6 +443,36 @@ export default function EnhancedCreateEventModal({ onClose, onCreated, groups, s
                 placeholder="https://example.com/image.jpg"
               />
             </div>
+
+            {/* Participants */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  <UserPlus className="inline h-4 w-4 mr-2" />
+                  Účastníci
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowInviteModal(true)}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  + Pozvat lidi
+                </button>
+              </div>
+              {invitedUsers.length > 0 ? (
+                <div className="p-3 border border-gray-300 rounded-lg bg-gray-50">
+                  <p className="text-sm text-gray-600">
+                    Pozváno: <span className="font-medium">{invitedUsers.length} lidí</span>
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 border border-gray-300 rounded-lg bg-gray-50">
+                  <p className="text-sm text-gray-500">
+                    Zatím žádní pozvaní účastníci
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="flex justify-end space-x-3 mt-8 pt-6 border-t border-gray-200">
@@ -451,6 +503,12 @@ export default function EnhancedCreateEventModal({ onClose, onCreated, groups, s
           </div>
         </form>
       </div>
+
+      <InviteParticipantsModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        onInvited={handleInviteParticipants}
+      />
     </div>
   )
 }
