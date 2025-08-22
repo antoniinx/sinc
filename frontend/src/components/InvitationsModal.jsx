@@ -42,12 +42,14 @@ const InvitationsModal = ({ isOpen, onClose, onResponded }) => {
 
     setLoading(true);
     try {
-      await api.put(`/events/${eventId}/respond`, {
+      console.log('Sending response:', { eventId, status, suggestedDate, suggestedTime });
+      const response = await api.put(`/events/${eventId}/respond`, {
         status,
         suggestedDate: status === 'maybe' ? suggestedDate : null,
         suggestedTime: status === 'maybe' ? suggestedTime : null
       });
       
+      console.log('Response success:', response.data);
       toast.success('Odpověď byla odeslána!');
       setRespondingTo(null);
       setSuggestedDate('');
@@ -56,6 +58,7 @@ const InvitationsModal = ({ isOpen, onClose, onResponded }) => {
       loadInvitations();
     } catch (error) {
       console.error('Error responding to invitation:', error);
+      console.error('Error response:', error.response?.data);
       toast.error('Chyba při odesílání odpovědi');
     } finally {
       setLoading(false);
@@ -84,12 +87,12 @@ const InvitationsModal = ({ isOpen, onClose, onResponded }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Pozvánky na události</h2>
+      <div className="bg-white p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Pozvánky na události</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 text-xl font-bold"
           >
             ✕
           </button>
@@ -105,106 +108,123 @@ const InvitationsModal = ({ isOpen, onClose, onResponded }) => {
             <p className="text-gray-600">Nemáš žádné čekající pozvánky</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {invitations.map(invitation => (
-              <div key={invitation.id} className="border rounded-lg p-4">
-                <div className="flex justify-between items-start mb-3">
+              <div key={invitation.id} className="border-2 border-gray-200 p-6">
+                <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="font-semibold text-lg">{invitation.title}</h3>
-                    <p className="text-gray-600">{invitation.group_name}</p>
+                    <h3 className="font-bold text-xl text-gray-900 mb-2">{invitation.title}</h3>
+                    <p className="text-gray-700 font-medium mb-1">{invitation.group_name}</p>
                     <p className="text-sm text-gray-500">
                       Od: {invitation.creator_name}
                     </p>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(invitation.status)}`}>
+                  <span className={`px-3 py-1 text-sm font-bold ${getStatusColor(invitation.status)}`}>
                     {getStatusText(invitation.status)}
                   </span>
                 </div>
 
                 {invitation.description && (
-                  <p className="text-gray-700 mb-3">{invitation.description}</p>
+                  <p className="text-gray-700 mb-4 font-medium">{invitation.description}</p>
                 )}
 
-                <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+                <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
                   <div>
-                    <span className="font-medium">Datum:</span>
-                    <p>{format(new Date(invitation.date), 'EEEE d. MMMM yyyy', { locale: cs })}</p>
+                    <span className="font-bold text-gray-900">Datum:</span>
+                    <p className="font-medium">{format(new Date(invitation.date), 'EEEE d. MMMM yyyy', { locale: cs })}</p>
                   </div>
                   {invitation.time && (
                     <div>
-                      <span className="font-medium">Čas:</span>
-                      <p>{invitation.time}</p>
+                      <span className="font-bold text-gray-900">Čas:</span>
+                      <p className="font-medium">{invitation.time}</p>
                     </div>
                   )}
                   {invitation.location && (
                     <div className="col-span-2">
-                      <span className="font-medium">Místo:</span>
-                      <p>{invitation.location}</p>
+                      <span className="font-bold text-gray-900">Místo:</span>
+                      <p className="font-medium">{invitation.location}</p>
                     </div>
                   )}
                 </div>
 
                 {respondingTo === invitation.id ? (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Navrhovaný termín (pro "možná"):
+                      <label className="block text-sm font-bold text-gray-900 mb-2">
+                        Navrhovaný termín:
                       </label>
                       <input
                         type="date"
                         value={suggestedDate}
                         onChange={(e) => setSuggestedDate(e.target.value)}
-                        className="w-full p-2 border rounded-lg"
+                        className="w-full p-3 border-2 border-gray-300 font-medium"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">
+                      <label className="block text-sm font-bold text-gray-900 mb-2">
                         Navrhovaný čas:
                       </label>
                       <input
                         type="time"
                         value={suggestedTime}
                         onChange={(e) => setSuggestedTime(e.target.value)}
-                        className="w-full p-2 border rounded-lg"
+                        className="w-full p-3 border-2 border-gray-300 font-medium"
                       />
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-3">
                       <button
                         onClick={() => handleRespond(invitation.id, 'yes')}
                         disabled={loading}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                        className="px-6 py-3 bg-green-600 text-white font-bold hover:bg-green-700 disabled:opacity-50"
                       >
-                        Pojedu
+                        Potvrdit
                       </button>
                       <button
                         onClick={() => handleRespond(invitation.id, 'maybe')}
                         disabled={loading || !suggestedDate}
-                        className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50"
+                        className="px-6 py-3 bg-yellow-600 text-white font-bold hover:bg-yellow-700 disabled:opacity-50"
                       >
                         Možná
                       </button>
                       <button
                         onClick={() => handleRespond(invitation.id, 'no')}
                         disabled={loading}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                        className="px-6 py-3 bg-red-600 text-white font-bold hover:bg-red-700 disabled:opacity-50"
                       >
-                        Nepojedu
+                        Odmítnout
                       </button>
                       <button
                         onClick={() => setRespondingTo(null)}
-                        className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                        className="px-6 py-3 text-gray-600 border-2 border-gray-300 font-bold hover:bg-gray-50"
                       >
                         Zrušit
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <button
-                    onClick={() => setRespondingTo(invitation.id)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    Odpovědět
-                  </button>
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => handleRespond(invitation.id, 'yes')}
+                      disabled={loading}
+                      className="px-6 py-3 bg-green-600 text-white font-bold hover:bg-green-700 disabled:opacity-50"
+                    >
+                      Potvrdit
+                    </button>
+                    <button
+                      onClick={() => setRespondingTo(invitation.id)}
+                      disabled={loading}
+                      className="px-6 py-3 bg-yellow-600 text-white font-bold hover:bg-yellow-700 disabled:opacity-50"
+                    >
+                      Navrhnout termín
+                    </button>
+                    <button
+                      onClick={() => handleRespond(invitation.id, 'no')}
+                      disabled={loading}
+                      className="px-6 py-3 bg-red-600 text-white font-bold hover:bg-red-700 disabled:opacity-50"
+                    >
+                      Odmítnout
+                    </button>
+                  </div>
                 )}
               </div>
             ))}

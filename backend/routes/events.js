@@ -505,12 +505,24 @@ router.post('/:eventId/invite', [
 router.put('/:eventId/respond', [
   auth,
   body('status').isIn(['yes', 'no', 'maybe']).withMessage('Status must be yes, no, or maybe'),
-  body('suggestedDate').optional().isISO8601().withMessage('Suggested date must be valid ISO date'),
+  body('suggestedDate').optional().custom((value) => {
+    if (value && value !== '') {
+      return require('validator').isISO8601(value);
+    }
+    return true;
+  }).withMessage('Suggested date must be valid ISO date'),
   body('suggestedTime').optional().isString().withMessage('Suggested time must be a string')
 ], async (req, res) => {
   try {
+    console.log('Respond request:', { 
+      eventId: req.params.eventId, 
+      body: req.body, 
+      user: req.user.id 
+    });
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
@@ -518,22 +530,34 @@ router.put('/:eventId/respond', [
     const { status, suggestedDate, suggestedTime } = req.body;
 
     // Check if user is invited to this event
+    console.log('Checking attendee:', { eventId, userId: req.user.id });
     const attendeeCheck = await queryOne(`
       SELECT * FROM event_attendees 
       WHERE event_id = ? AND user_id = ?
     `, [eventId, req.user.id]);
 
+    console.log('Attendee check result:', attendeeCheck.rows);
     if (attendeeCheck.rows.length === 0) {
+      console.log('Invitation not found');
       return res.status(404).json({ error: 'Invitation not found' });
     }
 
     // Update attendance status
+    console.log('Updating attendance:', { 
+      status, 
+      suggestedDate: suggestedDate || null, 
+      suggestedTime: suggestedTime || null, 
+      eventId, 
+      userId: req.user.id 
+    });
+    
     await run(`
       UPDATE event_attendees 
       SET status = ?, suggested_date = ?, suggested_time = ?
       WHERE event_id = ? AND user_id = ?
     `, [status, suggestedDate || null, suggestedTime || null, eventId, req.user.id]);
 
+    console.log('Attendance updated successfully');
     res.json({ 
       message: 'Response recorded successfully',
       status,
