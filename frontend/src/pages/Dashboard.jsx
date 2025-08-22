@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Calendar, CalendarDays, Users, Plus, LogOut, User, Settings, ChevronDown, UserPlus, Search, X, Check, Clock, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
+import { Calendar, CalendarDays, Users, Plus, LogOut, User, Settings, ChevronDown, UserPlus, Search, X, Check, Clock, ChevronLeft, ChevronRight, Sparkles, Bell, Mail } from 'lucide-react'
 import { addMonths, addWeeks, addDays } from 'date-fns'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../services/api'
@@ -14,6 +14,8 @@ import EnhancedCreateEventModal from '../components/EnhancedCreateEventModal'
 import EditGroupModal from '../components/EditGroupModal'
 import ProfileSettingsModal from '../components/ProfileSettingsModal'
 import AIChatModal from '../components/AIChatModal'
+import NotificationsModal from '../components/NotificationsModal'
+import InvitationsModal from '../components/InvitationsModal'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 
 export default function Dashboard() {
@@ -43,6 +45,10 @@ export default function Dashboard() {
   const [calendarDate, setCalendarDate] = useState(new Date())
   const [openFriendProfile, setOpenFriendProfile] = useState(null)
   const [showAIChat, setShowAIChat] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [showInvitations, setShowInvitations] = useState(false)
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
+  const [unreadInvitations, setUnreadInvitations] = useState(0)
 
   const handlePrev = () => {
     setCalendarDate(prev => {
@@ -71,16 +77,20 @@ export default function Dashboard() {
 
   const fetchData = async () => {
     try {
-      const [groupsRes, eventsRes, friendsRes, pendingRes] = await Promise.all([
+      const [groupsRes, eventsRes, friendsRes, pendingRes, notificationsRes, invitationsRes] = await Promise.all([
         api.get('/groups'),
         api.get('/events'),
         api.get('/friends'),
-        api.get('/friends/pending')
+        api.get('/friends/pending'),
+        api.get('/notifications/unread'),
+        api.get('/invitations')
       ])
       setGroups(groupsRes.data)
       setEvents(eventsRes.data)
       setFriends(friendsRes.data)
       setPendingRequests(pendingRes.data)
+      setUnreadNotifications(notificationsRes.data.count)
+      setUnreadInvitations(invitationsRes.data.filter(inv => inv.status === 'pending').length)
       // Initialize with all groups active by default
       setActiveGroupIds(new Set((groupsRes.data || []).map(g => g.id)))
     } catch (error) {
@@ -333,6 +343,34 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              {/* Notifications Button */}
+              <button
+                onClick={() => setShowNotifications(true)}
+                className="btn btn-ghost btn-nav flex items-center relative"
+                title="Notifikace"
+              >
+                <Bell className="h-4 w-4 mr-1" />
+                {unreadNotifications > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                  </span>
+                )}
+              </button>
+
+              {/* Invitations Button */}
+              <button
+                onClick={() => setShowInvitations(true)}
+                className="btn btn-ghost btn-nav flex items-center relative"
+                title="Pozvánky"
+              >
+                <Mail className="h-4 w-4 mr-1" />
+                {unreadInvitations > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {unreadInvitations > 9 ? '9+' : unreadInvitations}
+                  </span>
+                )}
+              </button>
+
               {/* AI Assistant Button */}
               <button
                 onClick={() => setShowAIChat(true)}
@@ -717,6 +755,18 @@ export default function Dashboard() {
         <AIChatModal
           onClose={() => setShowAIChat(false)}
           onEventCreated={handleAIEventCreated}
+        />
+      )}
+
+      {showNotifications && (
+        <NotificationsModal
+          onClose={() => setShowNotifications(false)}
+        />
+      )}
+
+      {showInvitations && (
+        <InvitationsModal
+          onClose={() => setShowInvitations(false)}
         />
       )}
       

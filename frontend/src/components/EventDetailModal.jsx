@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
-import { X, Calendar as CalIcon, Clock, MapPin, User, MessageCircle, CheckCircle, XCircle, HelpCircle, Loader2, UserPlus, UserX, Trash2, Check, MoreVertical } from 'lucide-react'
+import { useEffect, useState, Fragment } from 'react'
+import { X, Calendar as CalIcon, Clock, MapPin, User, MessageCircle, CheckCircle, XCircle, HelpCircle, Loader2, UserPlus, UserX, Trash2, Check, MoreVertical, Mail } from 'lucide-react'
 import { api } from '../services/api'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 import { cs } from 'date-fns/locale'
 import { useAuth } from '../contexts/AuthContext'
+import InvitePeopleModal from './InvitePeopleModal'
 
 export default function EventDetailModal({ eventId, onClose, onDeleted }) {
   const { user } = useAuth()
@@ -17,6 +18,7 @@ export default function EventDetailModal({ eventId, onClose, onDeleted }) {
   const [newTask, setNewTask] = useState('')
   const [taskLoading, setTaskLoading] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
+  const [showInviteModal, setShowInviteModal] = useState(false)
 
   useEffect(() => {
     fetchEvent()
@@ -129,7 +131,8 @@ export default function EventDetailModal({ eventId, onClose, onDeleted }) {
   }
 
   return (
-    <div className="w-full h-full bg-white rounded-none shadow-none border-0 flex flex-col" onClick={(e) => e.stopPropagation()}>
+    <Fragment>
+      <div className="w-full h-full bg-white rounded-none shadow-none border-0 flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 flex-shrink-0">
             <div className="min-w-0">
             <h2 className="text-xl font-extrabold text-gray-900 tracking-tight truncate">{event?.title || 'Událost'}</h2>
@@ -201,6 +204,12 @@ export default function EventDetailModal({ eventId, onClose, onDeleted }) {
                       <button onClick={() => handleAttendance('yes')} aria-pressed={userStatus === 'yes'} className={`px-3 py-2 text-sm font-semibold ${userStatus === 'yes' ? 'bg-green-600 text-white' : 'btn-outline'}`}>Účastním se</button>
                       <button onClick={() => handleAttendance('maybe')} aria-pressed={userStatus === 'maybe'} className={`px-3 py-2 text-sm font-semibold ${userStatus === 'maybe' ? 'btn-amber' : 'btn-outline'}`}>Možná</button>
                       <button onClick={() => handleAttendance('no')} aria-pressed={userStatus === 'no'} className={`px-3 py-2 text-sm font-semibold ${userStatus === 'no' ? 'btn-danger' : 'btn-outline'}`}>Neúčastním se</button>
+                      {event?.creator_id === user?.id && (
+                        <button onClick={() => setShowInviteModal(true)} className="btn btn-primary btn-sm inline-flex items-center gap-1" title="Pozvat lidi">
+                          <Mail className="h-4 w-4" />
+                          Pozvat
+                        </button>
+                      )}
                       <button onClick={handleDelete} className="ml-auto btn btn-danger btn-sm inline-flex items-center" title="Smazat událost"><Trash2 className="h-4 w-4" /></button>
                     </div>
                   </div>
@@ -256,6 +265,19 @@ export default function EventDetailModal({ eventId, onClose, onDeleted }) {
             </div>
           )}
         </div>
+      </div>
+      
+      {showInviteModal && (
+        <InvitePeopleModal
+          event={event}
+          onClose={() => setShowInviteModal(false)}
+          onInvited={() => {
+            setShowInviteModal(false);
+            fetchEvent();
+          }}
+        />
+      )}
+    </Fragment>
   )
 }
 

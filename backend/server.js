@@ -11,6 +11,8 @@ const commentsRoutes = require('./routes/comments');
 const usersRoutes = require('./routes/users');
 const friendsRoutes = require('./routes/friends');
 const aiRoutes = require('./routes/ai');
+const invitationRoutes = require('./routes/invitations');
+const notificationRoutes = require('./routes/notifications');
 const path = require('path');
 
 const app = express();
@@ -45,6 +47,8 @@ app.use('/api/comments', commentsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/friends', friendsRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/invitations', invitationRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
