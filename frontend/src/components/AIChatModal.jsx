@@ -95,29 +95,29 @@ export default function AIChatModal({ onClose, onEventCreated }) {
     }
   }
 
-    return (
+  return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" onClick={onClose}>
       <div className="fixed inset-0 bg-black/50"></div>
       <div 
-        className="relative bg-white border-2 border-gray-200 rounded-lg w-full max-w-2xl max-h-[80vh] flex flex-col shadow-xl"
+        className="relative bg-white w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-blue-500">
+        <div className="flex items-center justify-between px-6 py-4 bg-red-600">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-              <Sparkles className="h-5 w-5 text-blue-500" />
+            <div className="w-10 h-10 bg-white flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-red-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">AI Asistent</h2>
+              <h2 className="text-xl font-bold text-white uppercase tracking-wide">AI Asistent</h2>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-lg flex items-center justify-center transition-colors"
+            className="w-8 h-8 bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
             title="Zavřít (Esc)"
           >
-            <X className="h-4 w-4 text-white" />
+            <X className="h-4 w-4 text-white font-bold" />
           </button>
         </div>
 
@@ -130,47 +130,47 @@ export default function AIChatModal({ onClose, onEventCreated }) {
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] px-4 py-3 rounded-lg border ${
+                className={`max-w-[80%] px-4 py-3 border-2 ${
                   message.type === 'user'
-                    ? 'bg-blue-500 text-white border-blue-600 shadow-sm'
+                    ? 'bg-red-600 text-white border-red-700 shadow-sm'
                     : message.isError
-                    ? 'bg-red-50 text-red-800 border-red-200'
-                    : 'bg-white text-gray-900 border-gray-200 shadow-sm'
+                    ? 'bg-red-50 text-red-800 border-red-300'
+                    : 'bg-white text-gray-900 border-gray-300 shadow-sm'
                 }`}
               >
-                <p className="text-sm leading-relaxed">{message.content}</p>
-                                 {message.eventData && (
-                   <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                     <h4 className="font-medium text-sm mb-2 text-gray-900">Návrh události:</h4>
-                     <div className="space-y-1 text-xs mb-3">
-                       <div className="flex items-center">
-                         <Calendar className="h-3 w-3 mr-2 text-blue-500" />
-                         <span>{message.eventData.title}</span>
-                       </div>
-                       <div className="flex items-center">
-                         <Clock className="h-3 w-3 mr-2 text-purple-500" />
-                         <span>{message.eventData.date} {message.eventData.time}</span>
-                       </div>
-                     </div>
-                     <button
-                       onClick={() => onEventCreated(message.eventData)}
-                       className="w-full px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors"
-                     >
-                       Vytvořit událost
-                     </button>
-                   </div>
-                 )}
+                <p className="text-sm leading-relaxed font-medium">{message.content}</p>
+                {message.eventData && (
+                  <div className="mt-3 p-3 bg-gray-50 border-2 border-gray-200">
+                    <h4 className="font-bold text-sm mb-2 text-gray-900">Návrh události:</h4>
+                    <div className="space-y-1 text-xs mb-3">
+                      <div className="flex items-center">
+                        <Calendar className="h-3 w-3 mr-2 text-red-600" />
+                        <span className="font-bold">{message.eventData.title}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Clock className="h-3 w-3 mr-2 text-red-600" />
+                        <span className="font-medium">{message.eventData.date} {message.eventData.time}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => onEventCreated(message.eventData)}
+                      className="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold border-2 border-red-700 transition-colors"
+                    >
+                      Vytvořit událost
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
           
           {loading && (
             <div className="flex justify-start">
-              <div className="bg-white border border-gray-200 px-4 py-3 rounded-lg shadow-sm">
+              <div className="bg-white border-2 border-gray-300 px-4 py-3 shadow-sm">
                 <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-red-600 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-red-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-red-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                 </div>
               </div>
             </div>
@@ -180,7 +180,7 @@ export default function AIChatModal({ onClose, onEventCreated }) {
         </div>
 
         {/* Input */}
-        <div className="border-t border-gray-200 p-6 bg-white">
+        <div className="border-t-2 border-gray-200 p-6 bg-white">
           <form onSubmit={handleSubmit} className="flex space-x-3">
             <input
               ref={inputRef}
@@ -189,15 +189,17 @@ export default function AIChatModal({ onClose, onEventCreated }) {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Napiš, jakou událost chceš vytvořit..."
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white text-gray-900 placeholder-gray-500"
+              className="flex-1 px-4 py-3 border-2 border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors bg-white text-gray-900 placeholder-gray-500 font-medium"
               disabled={loading}
             />
             <button
               type="submit"
               disabled={!input.trim() || loading}
-              className="px-6 py-3 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg border border-blue-600 shadow-sm transition-colors font-medium text-white"
+              className="px-6 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-red-700 shadow-sm transition-colors font-bold text-white flex items-center justify-center"
             >
-              <Send className="h-4 w-4" />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
             </button>
           </form>
         </div>
