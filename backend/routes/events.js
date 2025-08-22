@@ -426,4 +426,139 @@ router.delete('/tasks/:taskId', auth, async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+// Invite people to event
+router.post('/:eventId/invite', [
+  auth,
+  body('userIds').isArray().withMessage('User IDs must be an array'),
+  body('userIds.*').isInt().withMessage('Each user ID must be an integer')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { eventId } = req.params;
+    const { userIds } = req.body;
+
+    // Check if user is member of the event's group
+    const eventResult = await queryOne(`
+      SELECT e.group_id FROM events e WHERE e.id = ?
+    `, [eventId]);
+
+    if (eventResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    const groupId = eventResult.rows[0].group_id;
+    const memberCheck = await queryOne(`
+      SELECT * FROM group_members WHERE group_id = ? AND user_id = ?
+    `, [groupId, req.user.id]);
+
+    if (memberCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Check if all invited users are members of the group
+    const invitedMembersCheck = await query(`
+      SELECT user_id FROM group_members 
+      WHERE group_id = ? AND user_id IN (${userIds.map(() => '?').join(',')})
+    `, [groupId, ...userIds]);
+
+    if (invitedMembersCheck.rows.length !== userIds.length) {
+      return res.status(400).json({ error: 'All invited users must be members of the group' });
+    }
+
+    // Add attendees with 'pending' status
+    const invitations = [];
+    for (const userId of userIds) {
+      try {
+        await run(`
+          INSERT INTO event_attendees (event_id, user_id, status)
+          VALUES (?, ?, 'pending')
+        `, [eventId, userId]);
+        invitations.push({ userId, status: 'invited' });
+      } catch (error) {
+        // User might already be invited
+        invitations.push({ userId, status: 'already_invited' });
+      }
+    }
+
+    res.json({ 
+      message: 'Invitations sent successfully',
+      invitations 
+    });
+  } catch (error) {
+    console.error('Invite users error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Respond to event invitation
+router.put('/:eventId/respond', [
+  auth,
+  body('status').isIn(['yes', 'no', 'maybe']).withMessage('Status must be yes, no, or maybe'),
+  body('suggestedDate').optional().isISO8601().withMessage('Suggested date must be valid ISO date'),
+  body('suggestedTime').optional().isString().withMessage('Suggested time must be a string')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { eventId } = req.params;
+    const { status, suggestedDate, suggestedTime } = req.body;
+
+    // Check if user is invited to this event
+    const attendeeCheck = await queryOne(`
+      SELECT * FROM event_attendees 
+      WHERE event_id = ? AND user_id = ?
+    `, [eventId, req.user.id]);
+
+    if (attendeeCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Invitation not found' });
+    }
+
+    // Update attendance status
+    await run(`
+      UPDATE event_attendees 
+      SET status = ?, suggested_date = ?, suggested_time = ?
+      WHERE event_id = ? AND user_id = ?
+    `, [status, suggestedDate || null, suggestedTime || null, eventId, req.user.id]);
+
+    res.json({ 
+      message: 'Response recorded successfully',
+      status,
+      suggestedDate,
+      suggestedTime
+    });
+  } catch (error) {
+    console.error('Respond to invitation error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get pending invitations for user
+router.get('/invitations/pending', auth, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT e.*, g.name as group_name, u.name as creator_name,
+             ea.status, ea.suggested_date, ea.suggested_time
+      FROM events e
+      JOIN groups g ON e.group_id = g.id
+      JOIN users u ON e.creator_id = u.id
+      JOIN event_attendees ea ON e.id = ea.event_id
+      WHERE ea.user_id = ? AND ea.status = 'pending'
+      ORDER BY e.date ASC, e.time ASC
+    `, [req.user.id]);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get pending invitations error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;

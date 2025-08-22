@@ -2,107 +2,60 @@ import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
 
-const InvitePeopleModal = ({ event, onClose, onInvited }) => {
-  const [friends, setFriends] = useState([]);
-  const [selectedFriends, setSelectedFriends] = useState([]);
-  const [emailInput, setEmailInput] = useState('');
-  const [message, setMessage] = useState('');
+const InvitePeopleModal = ({ isOpen, onClose, eventId, groupId, onInvited }) => {
+  const [groupMembers, setGroupMembers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [loadingFriends, setLoadingFriends] = useState(true);
 
   useEffect(() => {
-    loadFriends();
-  }, []);
+    if (isOpen && groupId) {
+      loadGroupMembers();
+    }
+  }, [isOpen, groupId]);
 
-  const loadFriends = async () => {
+  const loadGroupMembers = async () => {
     try {
-      setLoadingFriends(true);
-      const response = await api.get('/friends');
-      setFriends(response.data);
+      const response = await api.get(`/groups/${groupId}/members`);
+      setGroupMembers(response.data);
     } catch (error) {
-      console.error('Error loading friends:', error);
-      toast.error('Chyba při načítání přátel');
-    } finally {
-      setLoadingFriends(false);
+      console.error('Error loading group members:', error);
+      toast.error('Chyba při načítání členů skupiny');
     }
   };
 
-  const handleFriendToggle = (friendId) => {
-    setSelectedFriends(prev => 
-      prev.includes(friendId) 
-        ? prev.filter(id => id !== friendId)
-        : [...prev, friendId]
+  const handleUserToggle = (userId) => {
+    setSelectedUsers(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
     );
   };
 
-  const handleEmailInvite = () => {
-    if (!emailInput.trim()) {
-      toast.error('Zadejte email');
-      return;
-    }
-    
-    if (!selectedFriends.includes(emailInput)) {
-      setSelectedFriends(prev => [...prev, emailInput]);
-    }
-    setEmailInput('');
-  };
-
-  const handleSendInvitations = async () => {
-    if (selectedFriends.length === 0) {
-      toast.error('Vyberte alespoň jednoho člověka');
+  const handleInvite = async () => {
+    if (selectedUsers.length === 0) {
+      toast.error('Vyber alespoň jednoho člověka');
       return;
     }
 
     setLoading(true);
     try {
-      const promises = selectedFriends.map(async (friendOrEmail) => {
-        // Check if it's an email or friend ID
-        const isEmail = friendOrEmail.includes('@');
-        
-        if (isEmail) {
-          // Send invitation by email
-          return api.post('/invitations', {
-            eventId: event.id,
-            inviteeEmail: friendOrEmail,
-            message: message || undefined
-          });
-        } else {
-          // Find friend by ID and get their email
-          const friend = friends.find(f => f.id === friendOrEmail);
-          if (friend) {
-            return api.post('/invitations', {
-              eventId: event.id,
-              inviteeEmail: friend.email,
-              message: message || undefined
-            });
-          }
-        }
+      await api.post(`/events/${eventId}/invite`, {
+        userIds: selectedUsers
       });
-
-      await Promise.all(promises);
       
       toast.success('Pozvánky byly odeslány!');
-      onInvited?.();
+      setSelectedUsers([]);
+      onInvited && onInvited();
       onClose();
     } catch (error) {
-      console.error('Error sending invitations:', error);
+      console.error('Error inviting users:', error);
       toast.error('Chyba při odesílání pozvánek');
     } finally {
       setLoading(false);
     }
   };
 
-  const removeSelected = (friendOrEmail) => {
-    setSelectedFriends(prev => prev.filter(item => item !== friendOrEmail));
-  };
-
-  const getSelectedName = (friendOrEmail) => {
-    if (friendOrEmail.includes('@')) {
-      return friendOrEmail; // Email
-    }
-    const friend = friends.find(f => f.id === friendOrEmail);
-    return friend ? friend.name : 'Neznámý';
-  };
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -118,114 +71,48 @@ const InvitePeopleModal = ({ event, onClose, onInvited }) => {
         </div>
 
         <div className="mb-4">
-          <h3 className="font-semibold mb-2">Událost:</h3>
-          <p className="text-gray-700">{event.title}</p>
-          <p className="text-sm text-gray-500">
-            {event.date} {event.time && `v ${event.time}`}
+          <p className="text-gray-600 mb-3">
+            Vyber lidi ze skupiny, které chceš pozvat:
           </p>
-        </div>
-
-        {/* Email input */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">
-            Pozvat podle emailu:
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="email"
-              value={emailInput}
-              onChange={(e) => setEmailInput(e.target.value)}
-              placeholder="email@example.com"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onKeyPress={(e) => e.key === 'Enter' && handleEmailInvite()}
-            />
-            <button
-              onClick={handleEmailInvite}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-            >
-              Přidat
-            </button>
-          </div>
-        </div>
-
-        {/* Friends list */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">
-            Pozvat přátele:
-          </label>
-          {loadingFriends ? (
-            <p className="text-gray-500">Načítání přátel...</p>
-          ) : (
-            <div className="max-h-32 overflow-y-auto border border-gray-300 rounded-md">
-              {friends.length === 0 ? (
-                <p className="p-2 text-gray-500">Žádní přátelé</p>
-              ) : (
-                friends.map(friend => (
-                  <label key={friend.id} className="flex items-center p-2 hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedFriends.includes(friend.id)}
-                      onChange={() => handleFriendToggle(friend.id)}
-                      className="mr-2"
-                    />
-                    <span>{friend.name}</span>
-                  </label>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Selected people */}
-        {selectedFriends.length > 0 && (
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">
-              Pozvaní lidé:
-            </label>
-            <div className="space-y-1">
-              {selectedFriends.map(friendOrEmail => (
-                <div key={friendOrEmail} className="flex items-center justify-between bg-gray-100 p-2 rounded">
-                  <span className="text-sm">{getSelectedName(friendOrEmail)}</span>
-                  <button
-                    onClick={() => removeSelected(friendOrEmail)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    ✕
-                  </button>
+          
+          <div className="max-h-60 overflow-y-auto border rounded-lg">
+            {groupMembers.map(member => (
+              <div
+                key={member.user_id}
+                className={`flex items-center p-3 border-b cursor-pointer hover:bg-gray-50 ${
+                  selectedUsers.includes(member.user_id) ? 'bg-blue-50' : ''
+                }`}
+                onClick={() => handleUserToggle(member.user_id)}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedUsers.includes(member.user_id)}
+                  onChange={() => handleUserToggle(member.user_id)}
+                  className="mr-3"
+                />
+                <div>
+                  <div className="font-medium">{member.name}</div>
+                  <div className="text-sm text-gray-500">{member.email}</div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        )}
-
-        {/* Message */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">
-            Zpráva (volitelně):
-          </label>
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Napište zprávu k pozvánce..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            rows="3"
-          />
         </div>
 
-        {/* Buttons */}
-        <div className="flex gap-2">
+        <div className="flex justify-end space-x-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+            className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+            disabled={loading}
           >
             Zrušit
           </button>
           <button
-            onClick={handleSendInvitations}
-            disabled={loading || selectedFriends.length === 0}
-            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleInvite}
+            disabled={loading || selectedUsers.length === 0}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Odesílání...' : 'Odeslat pozvánky'}
+            {loading ? 'Odesílám...' : `Pozvat (${selectedUsers.length})`}
           </button>
         </div>
       </div>

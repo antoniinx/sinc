@@ -1,4 +1,4 @@
-import { useEffect, useState, Fragment } from 'react'
+import { useEffect, useState } from 'react'
 import { X, Calendar as CalIcon, Clock, MapPin, User, MessageCircle, CheckCircle, XCircle, HelpCircle, Loader2, UserPlus, UserX, Trash2, Check, MoreVertical, Mail } from 'lucide-react'
 import { api } from '../services/api'
 import toast from 'react-hot-toast'
@@ -121,6 +121,14 @@ export default function EventDetailModal({ eventId, onClose, onDeleted }) {
     }
   }
 
+  const handleInvitePeople = () => {
+    setShowInviteModal(true)
+  }
+
+  const handleInvited = () => {
+    fetchEvent()
+  }
+
   const getStatusIcon = (status) => {
     switch (status) {
       case 'yes': return <CheckCircle className="h-4 w-4" />
@@ -131,29 +139,28 @@ export default function EventDetailModal({ eventId, onClose, onDeleted }) {
   }
 
   return (
-    <Fragment>
-      <div className="w-full h-full bg-white rounded-none shadow-none border-0 flex flex-col" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 flex-shrink-0">
-            <div className="min-w-0">
-            <h2 className="text-xl font-extrabold text-gray-900 tracking-tight truncate">{event?.title || 'Událost'}</h2>
-            {event?.group_name && (<div className="text-sm font-semibold text-gray-600 truncate">{event.group_name}</div>)}
-            </div>
-            <div className="flex items-center gap-2 relative">
-              <button onClick={() => setShowMenu(v => !v)} className="btn btn-ghost btn-nav" aria-label="Menu">
-                <MoreVertical className="h-5 w-5" />
-              </button>
-              {showMenu && (
-                <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 shadow-sm z-10">
-                  <button onClick={handleDelete} className="flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 w-full">
-                    <Trash2 className="h-4 w-4 mr-2" />Smazat událost
-                  </button>
-                </div>
-              )}
-              <button onClick={onClose} className="btn btn-ghost btn-nav" aria-label="Zavřít detail události">
-                <X className="h-5 w-5" />
+    <div className="w-full h-full bg-white rounded-none shadow-none border-0 flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 flex-shrink-0">
+        <div className="min-w-0">
+          <h2 className="text-xl font-extrabold text-gray-900 tracking-tight truncate">{event?.title || 'Událost'}</h2>
+          {event?.group_name && (<div className="text-sm font-semibold text-gray-600 truncate">{event.group_name}</div>)}
+        </div>
+        <div className="flex items-center gap-2 relative">
+          <button onClick={() => setShowMenu(v => !v)} className="btn btn-ghost btn-nav" aria-label="Menu">
+            <MoreVertical className="h-5 w-5" />
+          </button>
+          {showMenu && (
+            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 shadow-sm z-10">
+              <button onClick={handleDelete} className="flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 w-full">
+                <Trash2 className="h-4 w-4 mr-2" />Smazat událost
               </button>
             </div>
-          </div>
+          )}
+          <button onClick={onClose} className="btn btn-ghost btn-nav" aria-label="Zavřít detail události">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
 
           {loading ? (
             <div className="flex-1 p-10 flex items-center justify-center">
@@ -204,12 +211,6 @@ export default function EventDetailModal({ eventId, onClose, onDeleted }) {
                       <button onClick={() => handleAttendance('yes')} aria-pressed={userStatus === 'yes'} className={`px-3 py-2 text-sm font-semibold ${userStatus === 'yes' ? 'bg-green-600 text-white' : 'btn-outline'}`}>Účastním se</button>
                       <button onClick={() => handleAttendance('maybe')} aria-pressed={userStatus === 'maybe'} className={`px-3 py-2 text-sm font-semibold ${userStatus === 'maybe' ? 'btn-amber' : 'btn-outline'}`}>Možná</button>
                       <button onClick={() => handleAttendance('no')} aria-pressed={userStatus === 'no'} className={`px-3 py-2 text-sm font-semibold ${userStatus === 'no' ? 'btn-danger' : 'btn-outline'}`}>Neúčastním se</button>
-                      {event?.creator_id === user?.id && (
-                        <button onClick={() => setShowInviteModal(true)} className="btn btn-primary btn-sm inline-flex items-center gap-1" title="Pozvat lidi">
-                          <Mail className="h-4 w-4" />
-                          Pozvat
-                        </button>
-                      )}
                       <button onClick={handleDelete} className="ml-auto btn btn-danger btn-sm inline-flex items-center" title="Smazat událost"><Trash2 className="h-4 w-4" /></button>
                     </div>
                   </div>
@@ -243,7 +244,17 @@ export default function EventDetailModal({ eventId, onClose, onDeleted }) {
                   </div>
 
                   <div className="border border-gray-300 p-4">
-                    <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center tracking-wide"><User className="h-4 w-4 mr-2" />Účastníci ({event?.attendees?.length || 0})</h3>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-bold text-gray-900 flex items-center tracking-wide"><User className="h-4 w-4 mr-2" />Účastníci ({event?.attendees?.length || 0})</h3>
+                      <button
+                        onClick={handleInvitePeople}
+                        className="btn btn-primary btn-sm inline-flex items-center"
+                        title="Pozvat lidi"
+                      >
+                        <Mail className="h-4 w-4 mr-1" />
+                        Pozvat
+                      </button>
+                    </div>
                     <div className="space-y-2">
                       {event?.attendees?.map((attendee) => (
                         <div key={attendee.id} className="flex items-center justify-between border border-gray-200 px-3 py-2">
@@ -253,7 +264,7 @@ export default function EventDetailModal({ eventId, onClose, onDeleted }) {
                           </div>
                           <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-none whitespace-nowrap ${attendee.status === 'yes' ? 'bg-green-50 text-green-700 border border-green-200' : attendee.status === 'maybe' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : attendee.status === 'no' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-gray-50 text-gray-600 border border-gray-200'}`}>
                             {getStatusIcon(attendee.status)}
-                            <span className="ml-1">{attendee.status === 'yes' ? 'Účastní se' : attendee.status === 'maybe' ? 'Možná' : attendee.status === 'no' ? 'Neúčastní se' : 'Nerozhodnuto'}</span>
+                            <span className="ml-1">{attendee.status === 'yes' ? 'Účastní se' : attendee.status === 'maybe' ? 'Možná' : attendee.status === 'no' ? 'Neúčastní se' : 'Čeká na odpověď'}</span>
                           </span>
                         </div>
                       ))}
@@ -265,19 +276,16 @@ export default function EventDetailModal({ eventId, onClose, onDeleted }) {
             </div>
           )}
         </div>
-      </div>
-      
-      {showInviteModal && (
+
         <InvitePeopleModal
-          event={event}
+          isOpen={showInviteModal}
           onClose={() => setShowInviteModal(false)}
-          onInvited={() => {
-            setShowInviteModal(false);
-            fetchEvent();
-          }}
+          eventId={eventId}
+          groupId={event?.group_id}
+          onInvited={handleInvited}
         />
-      )}
-    </Fragment>
+      </div>
+    </div>
   )
 }
 

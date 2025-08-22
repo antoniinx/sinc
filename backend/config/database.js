@@ -94,6 +94,8 @@ function initDatabase() {
       event_id INTEGER,
       user_id INTEGER,
       status TEXT DEFAULT 'pending',
+      suggested_date TEXT,
+      suggested_time TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
       FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
@@ -133,35 +135,6 @@ function initDatabase() {
       FOREIGN KEY (friend_id) REFERENCES users (id) ON DELETE CASCADE,
       UNIQUE(user_id, friend_id)
     );
-
-    CREATE TABLE IF NOT EXISTS event_invitations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      event_id INTEGER,
-      inviter_id INTEGER,
-      invitee_id INTEGER,
-      status TEXT DEFAULT 'pending',
-      message TEXT,
-      suggested_date TEXT,
-      suggested_time TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
-      FOREIGN KEY (inviter_id) REFERENCES users (id) ON DELETE CASCADE,
-      FOREIGN KEY (invitee_id) REFERENCES users (id) ON DELETE CASCADE,
-      UNIQUE(event_id, invitee_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS notifications (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER,
-      type TEXT NOT NULL,
-      title TEXT NOT NULL,
-      message TEXT NOT NULL,
-      related_id INTEGER,
-      related_type TEXT,
-      is_read INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-    );
   `;
 
   db.exec(createTables, (err) => {
@@ -184,7 +157,9 @@ function runMigrations() {
     "ALTER TABLE users ADD COLUMN avatar TEXT",
     "ALTER TABLE users ADD COLUMN notifications BOOLEAN DEFAULT 1",
     "ALTER TABLE events ADD COLUMN end_date TEXT",
-    "ALTER TABLE events ADD COLUMN end_time TEXT"
+    "ALTER TABLE events ADD COLUMN end_time TEXT",
+    "ALTER TABLE event_attendees ADD COLUMN suggested_date TEXT",
+    "ALTER TABLE event_attendees ADD COLUMN suggested_time TEXT"
   ];
 
   migrations.forEach((migration, index) => {
