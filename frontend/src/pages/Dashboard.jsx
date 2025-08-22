@@ -46,6 +46,7 @@ export default function Dashboard() {
   const [showAIChat, setShowAIChat] = useState(false)
   const [showInvitations, setShowInvitations] = useState(false)
   const [pendingInvitations, setPendingInvitations] = useState([])
+  const [hasShownInvitationNotification, setHasShownInvitationNotification] = useState(false)
 
   const handlePrev = () => {
     setCalendarDate(prev => {
@@ -87,12 +88,13 @@ export default function Dashboard() {
       setPendingRequests(pendingRes.data)
       setPendingInvitations(invitationsRes.data)
       
-      // Show notification if there are pending invitations
-      if (invitationsRes.data.length > 0) {
+      // Show notification if there are pending invitations (only on first load)
+      if (invitationsRes.data.length > 0 && !hasShownInvitationNotification) {
         toast.success(`Máš ${invitationsRes.data.length} čekající pozvánky!`, {
           duration: 5000,
           icon: '🎉'
         })
+        setHasShownInvitationNotification(true)
       }
       
       // Initialize with all groups active by default
