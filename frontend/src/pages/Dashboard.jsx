@@ -45,6 +45,7 @@ export default function Dashboard() {
   const [openFriendProfile, setOpenFriendProfile] = useState(null)
   const [showAIChat, setShowAIChat] = useState(false)
   const [showInvitations, setShowInvitations] = useState(false)
+  const [pendingInvitations, setPendingInvitations] = useState([])
 
   const handlePrev = () => {
     setCalendarDate(prev => {
@@ -73,16 +74,27 @@ export default function Dashboard() {
 
   const fetchData = async () => {
     try {
-      const [groupsRes, eventsRes, friendsRes, pendingRes] = await Promise.all([
+      const [groupsRes, eventsRes, friendsRes, pendingRes, invitationsRes] = await Promise.all([
         api.get('/groups'),
         api.get('/events'),
         api.get('/friends'),
-        api.get('/friends/pending')
+        api.get('/friends/pending'),
+        api.get('/events/invitations/pending')
       ])
       setGroups(groupsRes.data)
       setEvents(eventsRes.data)
       setFriends(friendsRes.data)
       setPendingRequests(pendingRes.data)
+      setPendingInvitations(invitationsRes.data)
+      
+      // Show notification if there are pending invitations
+      if (invitationsRes.data.length > 0) {
+        toast.success(`Máš ${invitationsRes.data.length} čekající pozvánky!`, {
+          duration: 5000,
+          icon: '🎉'
+        })
+      }
+      
       // Initialize with all groups active by default
       setActiveGroupIds(new Set((groupsRes.data || []).map(g => g.id)))
     } catch (error) {
@@ -348,11 +360,16 @@ export default function Dashboard() {
               {/* Invitations Button */}
               <button
                 onClick={() => setShowInvitations(true)}
-                className="btn btn-ghost btn-nav flex items-center"
+                className="btn btn-ghost btn-nav flex items-center relative"
                 title="Pozvánky"
               >
                 <Calendar className="h-4 w-4 mr-1" />
                 Pozvánky
+                {pendingInvitations.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {pendingInvitations.length}
+                  </span>
+                )}
               </button>
               
               {/* User Dropdown */}
@@ -735,7 +752,10 @@ export default function Dashboard() {
       {showInvitations && (
         <InvitationsModal
           onClose={() => setShowInvitations(false)}
-          onResponded={fetchData}
+          onResponded={() => {
+            fetchData()
+            setShowInvitations(false)
+          }}
         />
       )}
       
