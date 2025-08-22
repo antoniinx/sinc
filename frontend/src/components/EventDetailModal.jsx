@@ -222,7 +222,7 @@ export default function EventDetailModal({ eventId, onClose, onDeleted }) {
                     </h3>
                     <button
                       onClick={handleInvitePeople}
-                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 border-2 border-purple-700 font-bold text-white transition-colors flex items-center"
+                      className="px-3 py-2 bg-purple-600 hover:bg-purple-700 border-2 border-purple-700 font-bold text-white transition-colors flex items-center text-xs"
                       title="Pozvat lidi"
                     >
                       <Mail className="h-4 w-4 mr-2" />
@@ -236,7 +236,7 @@ export default function EventDetailModal({ eventId, onClose, onDeleted }) {
                           <div className="font-bold truncate text-sm">{attendee.name}</div>
                           <div className="text-xs text-gray-500 truncate font-medium">{attendee.email}</div>
                         </div>
-                        <span className={`inline-flex items-center px-3 py-2 text-xs font-bold border-2 ml-3 ${getStatusColor(attendee.status)}`}>
+                        <span className={`inline-flex items-center px-3 py-2 text-xs font-bold border-2 ${getStatusColor(attendee.status)}`}>
                           {getStatusIcon(attendee.status)}
                           <span className="ml-2">
                             {attendee.status === 'yes' ? 'Účastní se' : 
