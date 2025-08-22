@@ -21,6 +21,7 @@ export default function EventDetailModal({ eventId, onClose, onDeleted }) {
   const [showMenu, setShowMenu] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [activeTab, setActiveTab] = useState('attendees') // 'attendees' or 'chat'
 
   useEffect(() => {
     fetchEvent()
@@ -193,38 +194,97 @@ export default function EventDetailModal({ eventId, onClose, onDeleted }) {
       ) : (
         <div className="flex-1 p-6 overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-            <div className="border-2 border-gray-200 p-5 flex flex-col h-full overflow-hidden">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center tracking-wide">
-                <MessageCircle className="h-5 w-5 mr-2 text-blue-600" />
-                Chat ({event?.comments?.length || 0})
-              </h3>
-              <div className="space-y-3 flex-1 overflow-y-auto mb-4">
-                {event?.comments?.map((comment) => (
-                  <div key={comment.id} className={`p-4 border-2 ${String(comment.user_id) === String(user?.id) ? 'bg-blue-50 border-blue-300 ml-8' : 'bg-gray-50 border-gray-300 mr-8'}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="font-bold text-sm truncate">{comment.user_name}</div>
-                      <div className="text-xs text-gray-500 ml-3 whitespace-nowrap font-medium">{format(new Date(comment.created_at), 'd.M.yyyy H:mm')}</div>
-                    </div>
-                    <p className="text-gray-700 text-sm whitespace-pre-wrap font-medium">{comment.text}</p>
-                  </div>
-                ))}
-                {(!event?.comments || event.comments.length === 0) && <div className="text-sm text-gray-500 font-medium">Zatím žádné komentáře</div>}
-              </div>
-              <form onSubmit={handleAddComment} className="flex items-center gap-3">
-                <input 
-                  value={newComment} 
-                  onChange={(e) => setNewComment(e.target.value)} 
-                  placeholder="Napsat zprávu..." 
-                  className="flex-1 px-4 py-3 border-2 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors font-medium" 
-                />
-                <button 
-                  type="submit" 
-                  disabled={submittingComment || !newComment.trim()} 
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-blue-700 font-bold text-white transition-colors"
+            {/* Left side - Attendees/Chat tabs */}
+            <div className="flex flex-col h-full">
+              {/* Tabs */}
+              <div className="flex space-x-1 mb-4 bg-gray-100 p-1">
+                <button
+                  onClick={() => setActiveTab('attendees')}
+                  className={`flex-1 py-2 px-3 text-sm font-bold transition-colors ${activeTab === 'attendees' ? 'bg-white text-blue-700' : 'text-gray-800 hover:text-gray-900'}`}
                 >
-                  Odeslat
+                  Účastníci ({event?.attendees?.length || 0})
                 </button>
-              </form>
+                <button
+                  onClick={() => setActiveTab('chat')}
+                  className={`flex-1 py-2 px-3 text-sm font-bold transition-colors ${activeTab === 'chat' ? 'bg-white text-blue-700' : 'text-gray-800 hover:text-gray-900'}`}
+                >
+                  Chat ({event?.comments?.length || 0})
+                </button>
+              </div>
+
+              {/* Tab content */}
+              {activeTab === 'attendees' ? (
+                <div className="border-2 border-gray-200 p-5 flex flex-col h-full overflow-hidden">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-gray-900 flex items-center tracking-wide">
+                      <User className="h-5 w-5 mr-2 text-purple-600" />
+                      Účastníci
+                    </h3>
+                    <button
+                      onClick={handleInvitePeople}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 border-2 border-purple-700 font-bold text-white transition-colors flex items-center"
+                      title="Pozvat lidi"
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Pozvat
+                    </button>
+                  </div>
+                  <div className="space-y-3 flex-1 overflow-y-auto">
+                    {event?.attendees?.map((attendee) => (
+                      <div key={attendee.id} className="flex items-center justify-between border-2 border-gray-200 px-4 py-3 hover:bg-gray-50 transition-colors">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold truncate text-sm">{attendee.name}</div>
+                          <div className="text-xs text-gray-500 truncate font-medium">{attendee.email}</div>
+                        </div>
+                        <span className={`inline-flex items-center px-3 py-2 text-xs font-bold border-2 ml-3 ${getStatusColor(attendee.status)}`}>
+                          {getStatusIcon(attendee.status)}
+                          <span className="ml-2">
+                            {attendee.status === 'yes' ? 'Účastní se' : 
+                             attendee.status === 'maybe' ? 'Možná' : 
+                             attendee.status === 'no' ? 'Neúčastní se' : 
+                             'Čeká na odpověď'}
+                          </span>
+                        </span>
+                      </div>
+                    ))}
+                    {(!event?.attendees || event.attendees.length === 0) && <div className="text-sm text-gray-500 font-medium">Zatím žádní účastníci</div>}
+                  </div>
+                </div>
+              ) : (
+                <div className="border-2 border-gray-200 p-5 flex flex-col h-full overflow-hidden">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center tracking-wide">
+                    <MessageCircle className="h-5 w-5 mr-2 text-blue-600" />
+                    Chat
+                  </h3>
+                  <div className="space-y-3 flex-1 overflow-y-auto mb-4">
+                    {event?.comments?.map((comment) => (
+                      <div key={comment.id} className={`p-4 border-2 ${String(comment.user_id) === String(user?.id) ? 'bg-blue-50 border-blue-300 ml-8' : 'bg-gray-50 border-gray-300 mr-8'}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="font-bold text-sm truncate">{comment.user_name}</div>
+                          <div className="text-xs text-gray-500 ml-3 whitespace-nowrap font-medium">{format(new Date(comment.created_at), 'd.M.yyyy H:mm')}</div>
+                        </div>
+                        <p className="text-gray-700 text-sm whitespace-pre-wrap font-medium">{comment.text}</p>
+                      </div>
+                    ))}
+                    {(!event?.comments || event.comments.length === 0) && <div className="text-sm text-gray-500 font-medium">Zatím žádné komentáře</div>}
+                  </div>
+                  <form onSubmit={handleAddComment} className="flex items-center gap-3">
+                    <input 
+                      value={newComment} 
+                      onChange={(e) => setNewComment(e.target.value)} 
+                      placeholder="Napsat zprávu..." 
+                      className="flex-1 px-4 py-3 border-2 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors font-medium" 
+                    />
+                    <button 
+                      type="submit" 
+                      disabled={submittingComment || !newComment.trim()} 
+                      className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-blue-700 font-bold text-white transition-colors"
+                    >
+                      Odeslat
+                    </button>
+                  </form>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col h-full overflow-y-auto space-y-6 pr-1">
@@ -343,42 +403,7 @@ export default function EventDetailModal({ eventId, onClose, onDeleted }) {
                 </div>
               </div>
 
-              <div className="border-2 border-gray-200 p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-900 flex items-center tracking-wide">
-                    <User className="h-5 w-5 mr-2 text-purple-600" />
-                    Účastníci ({event?.attendees?.length || 0})
-                  </h3>
-                  <button
-                    onClick={handleInvitePeople}
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 border-2 border-purple-700 font-bold text-white transition-colors flex items-center"
-                    title="Pozvat lidi"
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    Pozvat
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {event?.attendees?.map((attendee) => (
-                    <div key={attendee.id} className="flex items-center justify-between border-2 border-gray-200 px-4 py-3 hover:bg-gray-50 transition-colors">
-                      <div className="min-w-0 flex-1">
-                        <div className="font-bold truncate text-sm">{attendee.name}</div>
-                        <div className="text-xs text-gray-500 truncate font-medium">{attendee.email}</div>
-                      </div>
-                      <span className={`inline-flex items-center px-3 py-2 text-xs font-bold border-2 ml-3 ${getStatusColor(attendee.status)}`}>
-                        {getStatusIcon(attendee.status)}
-                        <span className="ml-2">
-                          {attendee.status === 'yes' ? 'Účastní se' : 
-                           attendee.status === 'maybe' ? 'Možná' : 
-                           attendee.status === 'no' ? 'Neúčastní se' : 
-                           'Čeká na odpověď'}
-                        </span>
-                      </span>
-                    </div>
-                  ))}
-                  {(!event?.attendees || event.attendees.length === 0) && <div className="text-sm text-gray-500 font-medium">Zatím žádní účastníci</div>}
-                </div>
-              </div>
+
             </div>
           </div>
         </div>
