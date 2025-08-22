@@ -94,13 +94,16 @@ export default function EnhancedCreateEventModal({ onClose, onCreated, groups, s
       
       // If there are invited users, invite them to the event
       if (invitedUsers.length > 0) {
+        console.log('Inviting users:', invitedUsers)
         try {
-          await api.post(`/events/${response.data.id}/invite`, {
+          const inviteResponse = await api.post(`/events/${response.data.id}/invite`, {
             userIds: invitedUsers
           })
+          console.log('Invite response:', inviteResponse.data)
           toast.success(`Událost byla úspěšně vytvořena a ${invitedUsers.length} pozvánek bylo odesláno`)
         } catch (inviteError) {
           console.error('Error inviting users:', inviteError)
+          console.error('Error response:', inviteError.response?.data)
           toast.success('Událost byla vytvořena, ale chyba při odesílání pozvánek')
         }
       } else {
